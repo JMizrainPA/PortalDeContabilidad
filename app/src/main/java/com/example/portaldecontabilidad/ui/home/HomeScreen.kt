@@ -269,7 +269,7 @@ fun StatusChip(status: TaskStatus) {
     }
     val (backgroundColor, textColor) = when (status) {
         TaskStatus.PENDING -> Pair(Color(0xFFF0F0F0), Color.DarkGray)
-        Task.Status.HIGH_PRIORITY -> Pair(Color.Red.copy(alpha = 0.1f), Color.Red)
+        TaskStatus.HIGH_PRIORITY -> Pair(Color.Red.copy(alpha = 0.1f), Color.Red)
         TaskStatus.IN_PROGRESS -> Pair(Color(0xFF1b396a).copy(alpha = 0.1f), Color(0xFF1b396a))
         TaskStatus.COMPLETED -> Pair(Color(0xFF4CAF50).copy(alpha = 0.1f), Color(0xFF4CAF50))
         else -> Pair(Color.Transparent, Color.Transparent)
