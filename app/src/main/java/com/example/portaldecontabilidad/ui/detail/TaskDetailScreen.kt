@@ -23,25 +23,38 @@ import com.example.portaldecontabilidad.data.Priority
 import com.example.portaldecontabilidad.data.Task
 import com.example.portaldecontabilidad.data.TaskStatus
 
-// "Smart" composable - Connects to ViewModel
+/**
+ * Esta es la "Vista" que muestra el detalle de una tarea específica.
+ * La dividimos en dos partes para seguir las buenas prácticas de Compose:
+ * 1.  `TaskDetailScreen`: El composable "inteligente" (smart) que se conecta al ViewModel.
+ * 2.  `TaskDetailContent`: El composable "tonto" (dumb) que solo se encarga de pintar la UI.
+ */
 @Composable
 fun TaskDetailScreen(
+    // Inyectamos el ViewModel que manejará la lógica de esta pantalla.
     taskDetailViewModel: TaskDetailViewModel = viewModel(),
     onNavigateBack: () -> Unit
 ) {
+    // Nos suscribimos al estado del ViewModel. Cuando la tarea cargue o cambie, `uiState` se actualizará.
     val uiState by taskDetailViewModel.uiState.collectAsState()
+
+    // Le pasamos los datos del estado al composable "tonto" para que los muestre.
     TaskDetailContent(
         task = uiState,
         onNavigateBack = onNavigateBack,
+        // Cuando el usuario cambia el estado en la UI, le avisamos al ViewModel.
         onStatusChange = { newStatus -> taskDetailViewModel.updateStatus(newStatus) }
     )
 }
 
-// "Dumb" composable - Represents the UI
+/**
+ * Este es el composable "tonto". No sabe nada sobre el ViewModel.
+ * Solo recibe datos y funciones, y se dedica a pintar la interfaz. Esto lo hace muy reutilizable y fácil de probar.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TaskDetailContent(
-    task: Task?,
+    task: Task?, // La tarea a mostrar. Puede ser nula mientras carga.
     onNavigateBack: () -> Unit,
     onStatusChange: (TaskStatus) -> Unit
 ) {
@@ -50,6 +63,7 @@ fun TaskDetailContent(
         containerColor = Color(0xFFF7F8FA),
         topBar = { DetailTopBar(onNavigateBack) },
     ) { paddingValues ->
+        // Usamos `task?.let` para mostrar el contenido solo cuando la tarea ya ha cargado.
         task?.let {
             Column(
                 modifier = Modifier
@@ -57,11 +71,12 @@ fun TaskDetailContent(
                     .padding(16.dp)
                     .fillMaxSize()
             ) {
+                // --- Componentes que muestran los detalles de la tarea ---
                 InfoChip(it.department, it.taskNumber)
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(it.title, fontWeight = FontWeight.Bold, fontSize = 22.sp)
                 Spacer(modifier = Modifier.height(24.dp))
-                StatusSelector(it.status, onStatusChange = onStatusChange)
+                StatusSelector(it.status, onStatusChange = onStatusChange) // El selector de estado.
                 Spacer(modifier = Modifier.height(16.dp))
                 InfoCard(icon = Icons.Filled.CalendarToday, title = "Fecha de vencimiento", value = it.fullDueDate, tag = it.dueDate, tagColor = Color(0xFFF09A34))
                 Spacer(modifier = Modifier.height(16.dp))
@@ -70,13 +85,15 @@ fun TaskDetailContent(
                 DescriptionCard(it.description)
             }
         } ?: run {
-            // Show a loading indicator while the task is loading
+            // Si la tarea es nula (todavía está cargando), mostramos un indicador de progreso.
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
             }
         }
     }
 }
+
+// --- COMPONENTES PEQUEÑOS Y REUTILIZABLES ---
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -112,14 +129,15 @@ fun InfoChip(department: String, taskNumber: String) {
 fun StatusSelector(currentStatus: TaskStatus, onStatusChange: (TaskStatus) -> Unit) {
     val statuses = listOf(TaskStatus.PENDING, TaskStatus.IN_PROGRESS, TaskStatus.COMPLETED)
     val statusNames = listOf("Pendiente", "En Progreso", "Hecho")
-    var selectedIndex by remember { mutableStateOf(statuses.indexOf(currentStatus).coerceAtLeast(0)) }
+    // `remember` con `key` se usa para que el estado se reinicie si la `currentStatus` que viene de fuera cambia.
+    var selectedIndex by remember(currentStatus) { mutableStateOf(statuses.indexOf(currentStatus).coerceAtLeast(0)) }
 
     Column {
         Text("ESTADO", color = Color.Gray, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
         Spacer(modifier = Modifier.height(8.dp))
         SegmentedButton(statuses, statusNames, selectedIndex) { index ->
             selectedIndex = index
-            onStatusChange(statuses[index])
+            onStatusChange(statuses[index]) // Notificamos hacia fuera sobre el cambio.
         }
     }
 }
@@ -182,6 +200,9 @@ fun DescriptionCard(description: String) {
     }
 }
 
+/**
+ * Una vista previa para ver cómo se ve la pantalla de detalle en Android Studio.
+ */
 @Preview(showBackground = true, backgroundColor = 0xFFF7F8FA)
 @Composable
 fun TaskDetailScreenPreview() {

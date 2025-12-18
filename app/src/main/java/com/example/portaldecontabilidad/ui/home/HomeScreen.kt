@@ -28,22 +28,33 @@ import com.example.portaldecontabilidad.R
 import com.example.portaldecontabilidad.data.Task
 import com.example.portaldecontabilidad.data.TaskStatus
 
+/**
+ * Esta es nuestra "Vista" para la pantalla principal, siguiendo el patrón MVVM.
+ * Su responsabilidad es mostrar los datos que el `HomeViewModel` le proporciona
+ * y notificar al ViewModel sobre las acciones del usuario (clics, etc.).
+ * Es una pantalla "tonta" en el buen sentido: no contiene lógica de negocio.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
+    // Inyectamos el ViewModel, que es el cerebro de esta pantalla.
     homeViewModel: HomeViewModel = viewModel(),
-    onTaskClick: (String) -> Unit,
-    onAddTaskClick: () -> Unit
+    // Funciones de navegación que nos vienen dadas desde fuera (el sistema de navegación de la app).
+    onTaskClick: (String) -> Unit, // Para ir a la pantalla de detalle.
+    onAddTaskClick: () -> Unit      // Para ir a la pantalla de crear nueva tarea.
 ) {
+    // Nos "suscribimos" al estado del ViewModel. Cada vez que el `uiState` cambie,
+    // Compose se encargará de "re-dibujar" esta pantalla con la nueva información.
     val uiState by homeViewModel.uiState.collectAsState()
     val primaryColor = Color(0xFF1b396a)
 
+    // El esqueleto de la pantalla.
     Scaffold(
         containerColor = Color(0xFFF7F8FA),
         topBar = { TopBar() },
-        floatingActionButton = {
+        floatingActionButton = { // El botón flotante para añadir tareas.
             FloatingActionButton(
-                onClick = onAddTaskClick,
+                onClick = onAddTaskClick, // Cuando se hace clic, llamamos a la función de navegación.
                 containerColor = primaryColor,
                 contentColor = Color.White,
                 shape = CircleShape
@@ -53,12 +64,27 @@ fun HomeScreen(
         }
     ) { paddingValues ->
         Column(modifier = Modifier.padding(paddingValues)) {
-            TaskTabs(uiState.selectedStatus, primaryColor) { status -> homeViewModel.filterTasks(status) }
-            FilterButtons()
-            TaskList(tasks = uiState.tasks, onTaskClick = onTaskClick, onDeleteTask = { homeViewModel.deleteTask(it) })
+            // Pestañas para filtrar por estado (Todas, Pendientes, etc.).
+            TaskTabs(
+                selectedStatus = uiState.selectedStatus, // El estado seleccionado viene del ViewModel.
+                primaryColor = primaryColor,
+                onStatusSelected = { status -> homeViewModel.filterTasks(status) } // Cuando el usuario selecciona una pestaña, se lo decimos al ViewModel.
+            )
+            FilterButtons() // Botones de filtro (aún sin implementar).
+            // La lista de tareas.
+            TaskList(
+                tasks = uiState.tasks, // La lista de tareas a mostrar viene del ViewModel.
+                onTaskClick = onTaskClick, // Pasamos la función de clic para que cada item sea navegable.
+                onDeleteTask = { homeViewModel.deleteTask(it) } // Cuando se hace clic en borrar, se lo decimos al ViewModel.
+            )
         }
     }
 }
+
+/**
+ * Componentes pequeños y reutilizables que forman la pantalla.
+ * Estos no necesitan saber nada sobre el ViewModel.
+ */
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -67,7 +93,7 @@ fun TopBar() {
         title = { Text("Mis Tareas", fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 8.dp)) },
         navigationIcon = {
             Image(
-                painter = painterResource(id = R.drawable.logo), // Replace with actual profile image
+                painter = painterResource(id = R.drawable.logo),
                 contentDescription = "Perfil",
                 modifier = Modifier
                     .padding(start = 16.dp)
@@ -148,10 +174,12 @@ fun FilterChip(text: String, modifier: Modifier = Modifier) {
 
 @Composable
 fun TaskList(tasks: List<Task>, onTaskClick: (String) -> Unit, onDeleteTask: (Task) -> Unit) {
+    // `LazyColumn` es eficiente para mostrar listas largas. Solo crea y muestra los elementos que caben en pantalla.
     LazyColumn(
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 100.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
+        // `items` es un constructor de `LazyColumn` que sabe cómo manejar una lista de datos.
         items(tasks) { task ->
             TaskItem(task = task, onTaskClick = onTaskClick, onDeleteTask = onDeleteTask)
         }
@@ -164,7 +192,7 @@ fun TaskItem(task: Task, onTaskClick: (String) -> Unit, onDeleteTask: (Task) -> 
     val icon = when (task.department) {
         "Contabilidad General" -> Icons.Filled.AccountBalance
         "Cuentas por Pagar" -> Icons.Filled.ReceiptLong
-        "Fiscal" -> Icons.Filled.Book // Looks like a document icon, Book is close.
+        "Fiscal" -> Icons.Filled.Book
         "Recursos Humanos" -> Icons.Filled.AttachMoney
         else -> Icons.Filled.Work
     }
@@ -174,11 +202,11 @@ fun TaskItem(task: Task, onTaskClick: (String) -> Unit, onDeleteTask: (Task) -> 
         TaskStatus.PENDING -> Triple(Icons.Filled.CalendarToday, "Vence: Mañana", Color.Gray)
         TaskStatus.HIGH_PRIORITY -> Triple(Icons.Filled.Warning, "Vence: 2 días", Color.Red)
         TaskStatus.COMPLETED -> Triple(Icons.Filled.CheckCircle, "Finalizada", Color(0xFF4CAF50))
-        else -> Triple(Icons.Filled.Info, "", Color.Gray) // Default/All case
+        else -> Triple(Icons.Filled.Info, "", Color.Gray)
     }
 
     Card(
-        modifier = Modifier.clickable { onTaskClick(task.id) },
+        modifier = Modifier.clickable { onTaskClick(task.id) }, // Hacemos toda la tarjeta clickeable.
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -225,7 +253,7 @@ fun TaskItem(task: Task, onTaskClick: (String) -> Unit, onDeleteTask: (Task) -> 
                     }
                 }
             }
-            IconButton(onClick = { onDeleteTask(task) }) {
+            IconButton(onClick = { onDeleteTask(task) }) { // Botón para borrar.
                 Icon(Icons.Filled.Delete, contentDescription = "Eliminar Tarea", tint = Color.Gray)
             }
         }
@@ -241,7 +269,7 @@ fun StatusChip(status: TaskStatus) {
     }
     val (backgroundColor, textColor) = when (status) {
         TaskStatus.PENDING -> Pair(Color(0xFFF0F0F0), Color.DarkGray)
-        TaskStatus.HIGH_PRIORITY -> Pair(Color.Red.copy(alpha = 0.1f), Color.Red)
+        Task.Status.HIGH_PRIORITY -> Pair(Color.Red.copy(alpha = 0.1f), Color.Red)
         TaskStatus.IN_PROGRESS -> Pair(Color(0xFF1b396a).copy(alpha = 0.1f), Color(0xFF1b396a))
         TaskStatus.COMPLETED -> Pair(Color(0xFF4CAF50).copy(alpha = 0.1f), Color(0xFF4CAF50))
         else -> Pair(Color.Transparent, Color.Transparent)
@@ -259,6 +287,9 @@ fun StatusChip(status: TaskStatus) {
     }
 }
 
+/**
+ * Vista previa para ver cómo se ve la pantalla en Android Studio.
+ */
 @Preview(showBackground = true, backgroundColor = 0xFFF7F8FA)
 @Composable
 fun HomeScreenPreview() {
