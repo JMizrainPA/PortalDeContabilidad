@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "840877698472",
+    "project_id": "portaldecontabilidad",
+    "storage_bucket": "portaldecontabilidad.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:840877698472:android:82c9eaeaf33d1d8964819d",
+        "android_client_info": {
+          "package_name": "com.example.portaldecontabilidad"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "840877698472-gjccfihglshveu8faqkibv2u26t6tc3g.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDUM_hm8-LBe6n35hIh2ZnXKQxe5s_xf2s"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "840877698472-gjccfihglshveu8faqkibv2u26t6tc3g.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
